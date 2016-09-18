@@ -4,6 +4,15 @@ from pyspark.sql.types import *
 from pyspark.sql import Row
 import graphframes as gf
 import matplotlib.pyplot as plt
+import networkx as nx
+def createGraphfromNX():
+    G1 = nx.erdos_renyi_graph(1000, 0.5)
+    G2 = nx.powerlaw_cluster_graph(1000,500, 0.5)
+    G3 = nx.barabasi_albert_graph(1000, 500)
+    nx.write_edgelist(G1,"erdos.graph.large",delimiter=",", data=False)
+    nx.write_edgelist(G2,"powerlaw.graph.large",delimiter=",", data=False)
+    nx.write_edgelist(G3,"barabasi.graph.large",delimiter=",", data=False)
+
 
 def buildSchema(schemaString):
     fields = [StructField(field_name, StringType(), True) for field_name in schemaString.split()]
@@ -78,9 +87,11 @@ def degreedist(graph):
 
 
 def main():
-    graphs = ["youtube","amazon","dblp"]
+    createGraphfromNX()
+    graphs = ["../stanford_graphs/youtube","../stanford_graphs/amazon","../stanford_graphs/dblp"]
+    graphs += ['erdos','powerlaw','barabasi']
     for graph in graphs:
-        v, e = read_graph("../stanford_graphs/"+graph+".graph.large", sc)
+        v, e = read_graph(graph+".graph.large", sc)
         g = createGraphFrame(v, e)
         ddf = degree_dist(g)
         power_law(ddf, graph)
