@@ -11,7 +11,6 @@ def buildSchema(schemaString):
     return schema
 
 
-
 def read_graph(edgelist, sc):
     """
     Constructs node and edge dataframe from the edgelist
@@ -20,7 +19,11 @@ def read_graph(edgelist, sc):
     ----------
     sc: SparkContext of the Spark Application
     edgelist: Name of the filename that contains the list of edges in the graph
-    
+    Takes edgelist in the form of 'u,v' format
+
+    Returns
+    -------
+    Pair of vertices and edges as SparkSQL DataFrame
     """
 
     edges = sc.textFile(edgelist)
@@ -49,21 +52,23 @@ def degree_dist(graph):
     Parameters
     ----------
     graph: GraphFrame object
-    
+
+    Returns
+    -------
+    degree_dist_df: SparkSQL DataFrame of the degree distribution
     """
     degrees = graph.degrees
     degree_rdd = degrees.rdd
     degree_count = degree_rdd.map(lambda x: (x[1], 1))
 
-    degree_dist = rdd.map(lambda x: (x[0], 1)).reduceByKey(lambda x, y: x + y)
-    
-    degree_dist.collect()
-    return degree_dist
+    degree_dist = degree_count.map(lambda x: (x[0], 1)).reduceByKey(lambda x, y: x + y)
+    degree_dist_df = sqlCtx.createDataFrame(degree_dist.map(lambda x: Row(x[0], x[1])), ["degree","count"])
+    return degree_dist_df
 
 
 def main():
     sc = SparkContext(appName="Degree")
-    v, e = read_graph(sc, "../9_11_edgelist.txt")
+    v, e = read_graph("../9_11_edgelist.txt", sc)
     g = createGraphFrame(v, e)
 
 
