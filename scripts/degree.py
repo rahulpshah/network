@@ -5,6 +5,11 @@ from pyspark.sql import Row
 import graphframes as gf
 import matplotlib.pyplot as plt
 import networkx as nx
+
+sc = SparkContext(appName="rahul")
+sqlCtx = SQLContext(sc)
+
+
 def createGraphfromNX():
     G1 = nx.erdos_renyi_graph(1000, 0.5)
     G2 = nx.powerlaw_cluster_graph(1000,500, 0.5)
@@ -93,7 +98,7 @@ def main():
     for graph in graphs:
         v, e = read_graph(graph+".graph.large", sc)
         g = createGraphFrame(v, e)
-        ddf = degree_dist(g)
+        ddf = degreedist(g)
         power_law(ddf, graph)
 
 
