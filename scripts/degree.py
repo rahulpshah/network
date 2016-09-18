@@ -5,11 +5,11 @@ from pyspark.sql import Row
 import graphframes as gf
 
 
-
 def buildSchema(schemaString):
     fields = [StructField(field_name, StringType(), True) for field_name in schemaString.split()]
     schema = StructType(fields)
     return schema
+
 
 
 def read_graph(edgelist, sc):
@@ -22,6 +22,7 @@ def read_graph(edgelist, sc):
     edgelist: Name of the filename that contains the list of edges in the graph
     
     """
+
     edges = sc.textFile(edgelist)
     edges = edges.map(lambda x: str(x).split(","))
     iedges = edges.map(lambda x: [x[1], x[0]])
@@ -32,6 +33,7 @@ def read_graph(edgelist, sc):
     nodes = nodes.map(lambda x: Row(u=x))
     edges_df = sqlCtx.createDataFrame(edges, buildSchema("src dst"))
     nodes_df = sqlCtx.createDataFrame(nodes, buildSchema("id"))
+
     return nodes_df, edges_df
 
 
@@ -48,7 +50,7 @@ def degree_dist(graph):
     ----------
     graph: GraphFrame object
     
-    """ 
+    """
     degrees = graph.degrees
     degree_rdd = degrees.rdd
     degree_count = degree_rdd.map(lambda x: (x[1], 1))
@@ -60,10 +62,10 @@ def degree_dist(graph):
 
 
 def main():
-    v, e = read_graph("../9_11_edgelist.txt", sc)
+    sc = SparkContext(appName="Degree")
+    v, e = read_graph(sc, "../9_11_edgelist.txt")
     g = createGraphFrame(v, e)
 
 
 if __name__ == '__main__':
-
     main()
