@@ -3,7 +3,7 @@ from pyspark import SQLContext
 from pyspark.sql.types import *
 from pyspark.sql import Row
 import graphframes as gf
-
+import matplotlib.pyplot as plt
 
 def buildSchema(schemaString):
     fields = [StructField(field_name, StringType(), True) for field_name in schemaString.split()]
@@ -39,12 +39,23 @@ def read_graph(edgelist, sc):
 
     return nodes_df, edges_df
 
+def power_law(ddf, name):
+
+    lst = ddf.sort("degree").select("count").map(lambda x: x[0]).collect()
+    s = sum(lst)
+    lst = map(lambda x: (1.0*x)/s, lst)
+    fig = plt.figure()
+    plt.plot(lst)
+    fig.suptitle('Power Test', fontsize=20)
+    plt.xlabel('Degree', fontsize=18)
+    plt.ylabel('P(Degree)', fontsize=16)
+    fig.savefig(name+'.png')
 
 def createGraphFrame(v, e):
     return gf.GraphFrame(v, e)
 
 
-def degree_dist(graph):
+def degreedist(graph):
     """
     Constructs the degree distribution of a graph. The function takes GraphFrame as input and returns 
     a Spark DataFrame with 2 columns: degree and count
@@ -67,9 +78,12 @@ def degree_dist(graph):
 
 
 def main():
-    sc = SparkContext(appName="Degree")
-    v, e = read_graph("../9_11_edgelist.txt", sc)
-    g = createGraphFrame(v, e)
+    graphs = ["youtube","amazon","dblp"]
+    for graph in graphs:
+        v, e = read_graph("../stanford_graphs/"+graph+".graph.large", sc)
+        g = createGraphFrame(v, e)
+        ddf = degree_dist(g)
+        power_law(ddf, graph)
 
 
 if __name__ == '__main__':
