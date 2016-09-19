@@ -19,14 +19,10 @@ sqlCtx = SQLContext(sc)
     List of ID and centrality closeness as SparkSQL DataFrame
     """
 def closeness(g):
-    lst = g.vertices.map(lambda x: x[0]).collect()
-    CC = []
-    for v in lst:
-        seq = lst.remove(v)
-        results = g.shortestPaths(landmarks=seq)
-        results = results.select("id", explode("distances"))
-        CC += [(v,1/sum(results["distances"])]
-    return sqlCtx.createDataFrame(CC, ["id", "closeness"])
+    vertices = g.vertices.map(lambda x: x[0]).collect()
+    shortest_path_df = g.shortestPaths(vertices)
+    CC = shortest_path_df.rdd.map(lambda x: (x[0], 1.0/sum(x[1].values())))
+    return sqlCtx.createDataFrame(CC, ["id","closeness"])
 
 
 def buildSchema(schemaString):
@@ -67,11 +63,15 @@ def createGraphFrame(v, e):
 
 
 def main():
-    graph = '/home/aparna/Downloads/network/comp_network.txt'
+    graph = '../comp_network.txt'
     v, e = read_graph(graph, sc)
     G = createGraphFrame(v, e)
     df = closeness(G)
     df = df.sort("closeness", ascending=False)
+    best_2 = df.select("id").rdd.map(lambda x: x[0]).collect()[:2]
+    with open('best_2.txt', 'w') as f:
+        for comp in best_2:
+            f.write(comp+"\n")
 
 if __name__ == '__main__':
     main()

@@ -63,7 +63,7 @@ def createGraphFrame(v, e):
 
 
 def main():
-    graph = 'edgelist.txt'
+    graph = '../9_11_edgelist.txt'
     v, e = read_graph(graph, sc)
     G = createGraphFrame(v, e)
     ddf = articulation_pts(G)
